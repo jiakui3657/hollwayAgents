@@ -50,7 +50,37 @@ export default {
   },
   methods: {
     btn() {
-      this.$router.go(-1);
+      let _this = this;
+      let phoneReg = /^[1][3,4,5,7,8][0-9]{9}$/;
+      let cartReg = /(^[1-9]\d{5}(18|19|([23]\d))\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$)|(^[1-9]\d{7}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}$)/;
+      if (!_this.name.length > 0) {
+        this.$toast("请输入姓名");
+      } else if (!phoneReg.test(_this.phone)) {
+        this.$toast("请输入正确的手机号");
+      } else if (!cartReg.test(_this.card)) {
+        this.$toast("请输入正确的身份证信息");
+      } else {
+        let params = {
+          name: _this.name,
+          phone: _this.phone,
+          no: _this.card
+        };
+        _this.https
+          .fetchPost("/rest/agent/addMember.htm", params)
+          .then(data => {
+            if (data.code == 0) {
+              window.console.log(data);
+              this.$toast.success("添加成功");
+              this.$router.go(-1);
+              //   this.$router.replace("/we");
+            } else {
+              this.$toast(data.msg);
+            }
+          })
+          .catch(err => {
+            window.console.log(err);
+          });
+      }
     }
   }
 };

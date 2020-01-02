@@ -9,6 +9,7 @@
         <van-field
           maxlength="5"
           v-model="name"
+          value="name"
           placeholder="请输入负责人名称"
         />
       </div>
@@ -30,6 +31,8 @@
           <van-picker
             show-toolbar
             :columns="industryList"
+            :default-index="industryIndex"
+            value-key="name"
             @cancel="industryPicker = false"
             @confirm="industryChange"
           />
@@ -53,6 +56,7 @@
           <van-picker
             show-toolbar
             :columns="shopList"
+            :default-index="shopIndex"
             @cancel="shopPicker = false"
             @confirm="shopChange"
           />
@@ -65,7 +69,7 @@
         折扣比例：
       </div>
       <div class="itemRight">
-        <van-field v-model="discount" placeholder="8即是8折" />
+        <van-field v-model="discount" value="discount" placeholder="8即是8折" />
       </div>
     </div>
     <div class="item">
@@ -74,7 +78,7 @@
         商家logo：
       </div>
       <div class="itemRight logo">
-        <van-uploader :after-read="afterLogo" />
+        <van-uploader :max-count="1" v-model="logo" :after-read="afterLogo" />
       </div>
     </div>
     <div class="item">
@@ -83,7 +87,11 @@
         商家门头：
       </div>
       <div class="itemRight logo">
-        <van-uploader :after-read="afterBanner" />
+        <van-uploader
+          :max-count="1"
+          v-model="mentou"
+          :after-read="afterBanner"
+        />
       </div>
     </div>
     <div class="item">
@@ -92,7 +100,12 @@
         会员特权：
       </div>
       <div class="itemRight">
-        <van-field maxlength="30" placeholder="30字限制" />
+        <van-field
+          v-model="privilege"
+          value="privilege"
+          maxlength="30"
+          placeholder="30字限制"
+        />
       </div>
     </div>
     <div class="item">
@@ -103,7 +116,8 @@
       <div class="itemRight">
         <van-cell-group>
           <van-field
-            v-model="shopInfo"
+            v-model="note"
+            value="note"
             rows="1"
             autosize
             type="textarea"
@@ -123,18 +137,87 @@ export default {
   components: {},
   data() {
     return {
+      shopId: "",
       name: "",
       discount: "",
+      logo: [{ url: "" }],
+      mentou: [{ url: "" }],
+      privilege: "",
+      note: "",
       industry: "",
-      shopInfo: "",
+      industryIndex: 0,
       industryPicker: false,
-      industryList: ["杭州", "宁波", "温州", "嘉兴", "湖州"],
+      industryList: [],
       shop: "",
+      shopIndex: 0,
       shopPicker: false,
-      shopList: ["杭州", "宁波", "温州", "嘉兴", "湖州"]
+      shopList: ["会员商家", "协议商家"]
     };
   },
+  mounted: function() {
+    this.getIndustryList().then(() => {
+      this.getShopInfo();
+    });
+  },
   methods: {
+    getShopInfo() {
+      let _this = this;
+      _this.shopId = _this.$route.query.id;
+      let params = {
+        id: _this.$route.query.id
+      };
+      return _this.https
+        .fetchPost("/rest/agentVenue/info.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            window.console.log(data);
+            _this.name = data.name;
+            _this.discount = data.rebate;
+            _this.logo[0].url = data.logo;
+            _this.mentou[0].url = data.mentou;
+            _this.privilege = data.privilege;
+            _this.note = data.note;
+            _this.industry = data.catalog;
+            _this.shop = data.venueType;
+            window.console.log(_this.industryList);
+            _this.industryList.forEach((item, index) => {
+              item.index = index;
+              if (item.name == data.catalog) {
+                _this.industryIndex = index;
+              }
+            });
+            _this.shopList.forEach((item, index) => {
+              if (item == data.venueType) {
+                _this.shopIndex = index;
+              }
+            });
+            return Promise.resolve();
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
+    },
+    getIndustryList() {
+      let _this = this;
+      let params = {};
+      return _this.https
+        .fetchPost("/rest/venue/catalogs.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            window.console.log(data);
+            _this.industryList = data.list;
+            return Promise.resolve();
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
+    },
     afterLogo(file) {
       window.console.log(file);
     },
@@ -143,7 +226,8 @@ export default {
     },
     industryChange(picker) {
       window.console.log(picker);
-      this.industry = picker;
+      this.industry = picker.name;
+      this.industryIndex = picker.index;
       this.industryPicker = false;
     },
     shopChange(picker) {
@@ -151,7 +235,32 @@ export default {
       this.shopPicker = false;
     },
     btn() {
-      this.$router.go(-1);
+      let _this = this;
+      window.console.log(_this.industryIndex, _this.shopIndex);
+      let params = {
+        id: _this.shopId,
+        name: _this.name,
+        logo: _this.logo[0].url,
+        mentou: _this.mentou[0].url,
+        note: _this.note,
+        privilege: _this.privilege,
+        rebate: _this.discount,
+        catalog: _this.industryList[_this.industryIndex].id,
+        venueType: _this.shop == "会员商家" ? "vip" : "single"
+      };
+      _this.https
+        .fetchPost("/rest/agentVenue/update.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            _this.$toast.success("添加成功");
+            _this.$router.go(-1);
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
     }
   }
 };

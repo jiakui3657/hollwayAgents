@@ -114,7 +114,7 @@
         <div>{{ sn }}<img :src="require('../assets/scan.jpg')" /></div>
       </div>
     </div>
-    <div class="btn">确定创建</div>
+    <div class="btn" @click="btn">确定创建</div>
   </div>
 </template>
 
@@ -137,7 +137,43 @@ export default {
   },
   methods: {
     btn() {
-      this.$router.go(-1);
+      let _this = this,
+        // eslint-disable-next-line no-unused-vars
+        phoneReg = /^[1][3,4,5,7,8][0-9]{9}$/;
+      let params = {
+        name: _this.shopName,
+        phone: _this.shopPhone,
+        address: _this.shopAddress,
+        lng: _this.lng,
+        lat: _this.lat,
+        startTime: _this.start,
+        endTime: _this.end,
+        sn: _this.sn
+      };
+      if (
+        _this.shopName == "" ||
+        !phoneReg.test(_this.shopPhone) ||
+        _this.shopAddress == "" ||
+        _this.start == "" ||
+        _this.end == "" ||
+        _this.sn == "请扫描设备二维码并核对"
+      ) {
+        _this.$toast("请补充网点信息");
+        return;
+      }
+      _this.https
+        .fetchPost("/rest/agent/create.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            _this.$toast.success("创建成功");
+            _this.$router.go(-1);
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
     },
     getStartTime(value) {
       this.start = value;

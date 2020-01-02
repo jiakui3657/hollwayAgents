@@ -1,14 +1,24 @@
 <template>
   <div class="branchesDetails">
     <div class="shopInfo">
-      <div>网点名称<span>西安望唐</span></div>
-      <div>服务时间<span>06:00 - 22:00</span></div>
-      <div>服务电话<span>13468844686</span></div>
-      <div>设备地址<span>陕西省西安市雁塔区科技路西口陈家庄小区</span></div>
+      <div>
+        网点名称<span>{{ equipmentInfo.name }}</span>
+      </div>
+      <div>
+        服务时间<span>{{ equipmentInfo.time }}</span>
+      </div>
+      <div>
+        服务电话<span>{{ equipmentInfo.phone }}</span>
+      </div>
+      <div>
+        设备地址<span>{{ equipmentInfo.address }}</span>
+      </div>
     </div>
     <div class="equipmentInfo">
-      <div class="basisInfo"><span>产品类型</span>充电宝</div>
-      <div class="basisInfo"><span>设备ID</span>HYCA100101010101010</div>
+      <div class="basisInfo">
+        <span>产品类型</span>{{ equipmentInfo.catalog }}
+      </div>
+      <div class="basisInfo"><span>设备ID</span>{{ equipmentInfo.id }}</div>
       <div class="equipmentType">
         <span>设备类型</span>
         <div>充电宝</div>
@@ -17,13 +27,25 @@
       <div class="billingInfo">
         <span>计费信息</span>
         <div class="billingPrice">
-          <div><van-field placeholder="1元" /><span>/半小时</span></div>
-          <div><van-field placeholder="20元" /><span>/每天(封顶)</span></div>
+          <div>
+            <van-field
+              v-model="halfHour"
+              value="halfHour"
+              placeholder="请输入金额"
+            /><span>元/半小时</span>
+          </div>
+          <div>
+            <van-field
+              v-model="day"
+              value="day"
+              placeholder="请输入金额"
+            /><span>元/每天(封顶)</span>
+          </div>
         </div>
       </div>
-      <div class="equipmentType"><span>设备SN</span>HYCA100101010101010</div>
+      <div class="equipmentType"><span>设备SN</span>{{ equipmentInfo.sn }}</div>
       <div class="bottom">
-        <div class="btn">提交</div>
+        <div class="btn" @click="sumbit">提交</div>
       </div>
     </div>
   </div>
@@ -34,9 +56,64 @@ export default {
   name: "branchesDetails",
   components: {},
   data() {
-    return {};
+    return {
+      equipmentInfo: {},
+      halfHour: "",
+      day: ""
+    };
   },
-  methods: {}
+  mounted: function() {
+    let _this = this;
+    let params = {
+      id: _this.$route.query.id
+    };
+    _this.https
+      .fetchPost("/rest/deviceAgent/view.htm", params)
+      .then(data => {
+        if (data.code == 0) {
+          window.console.log(data);
+          _this.equipmentInfo = data;
+          _this.halfHour = data.halfHour;
+          _this.day = data.day;
+          return Promise.resolve();
+        } else {
+          this.$toast(data.msg);
+        }
+      })
+      .catch(err => {
+        window.console.log(err);
+      });
+  },
+  methods: {
+    sumbit() {
+      let _this = this;
+      let params = {
+        id: _this.equipmentInfo.id,
+        halfHour: _this.halfHour,
+        day: _this.day
+      };
+      if (_this.halfHour > 0 && _this.day > 0) {
+        params.halfHour = _this.halfHour;
+        params.day = _this.day;
+      } else {
+        this.$toast("请输入正确金额");
+        return;
+      }
+      _this.https
+        .fetchPost("/rest/deviceAgent/update.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            window.console.log(data);
+            _this.$router.go(-1);
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
+    }
+  }
 };
 </script>
 
@@ -162,6 +239,9 @@ export default {
           width: 4.42rem;
           color: #303030;
           font-size: 0.7rem;
+        }
+        span {
+          width: auto;
         }
       }
     }

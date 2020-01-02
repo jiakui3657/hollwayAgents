@@ -75,7 +75,7 @@ export default {
     padding-left: 0.75rem;
     box-sizing: border-box;
     height: 9.86rem;
-    text-align: left
+    text-align: left;
   }
 
   .title {
@@ -156,7 +156,7 @@ export default {
   }
 
   .withdrawalList {
-    height: 2.50rem;
+    height: 2.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;

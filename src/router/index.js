@@ -1,5 +1,6 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
+import VueCookies from "vue-cookies";
 import Home from "../views/Home.vue";
 import Team from "../views/Team.vue";
 import Statistical from "../views/Statistical.vue";
@@ -99,6 +100,21 @@ const routes = [
 const router = new VueRouter({
   mode: "history",
   routes
+});
+
+router.beforeEach((to, form, next) => {
+  window.console.log(VueCookies.get("login"));
+  if (to.path == "/" || to.path == "/login") {
+    if (VueCookies.get("login") && VueCookies.get("login").userToken) {
+      next("/home");
+    } else {
+      next();
+    }
+  } else if (VueCookies.get("login") && VueCookies.get("login").userToken) {
+    next();
+  } else {
+    next("/");
+  }
 });
 
 export default router;

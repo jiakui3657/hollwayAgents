@@ -17,15 +17,15 @@
         finished-text="没有更多了"
         @load="onLoad"
       >
-        <van-cell v-for="(item, index) in 10" :key="index">
-          <img src="require('../asstes/logo.jpg')" alt="" srcset="" />
+        <van-cell v-for="(item, index) in team.list" :key="index">
+          <img :src="item.avatar" alt="" srcset="" />
           <div class="salesmanList_r">
             <div class="salesmanName">
-              <span>纽百特</span>
-              <span>13468844686</span>
+              <span>{{ item.name }}</span>
+              <span>{{ item.phone }}</span>
             </div>
-            <div class="branchesNum">已创建8个网点</div>
-            <div class="earnings">总收益：521</div>
+            <div class="branchesNum">已创建{{ item.num }}个网点</div>
+            <div class="earnings">总收益：{{ item.money }}</div>
           </div>
         </van-cell>
       </van-list>
@@ -43,30 +43,40 @@ export default {
       value: "",
       team: {},
       loading: false,
-      finished: true,
+      finished: false,
       no: 1,
       isLoading: false
     };
   },
-  mounted: function() {},
+  mounted: function() {
+    this.getTeam(this.no, this.$store.state.size);
+  },
   methods: {
     onLoad() {
+      if (this.team.no && this.team.no < this.team.totalPage) {
+        this.team.no = this.team.no + 1;
+        this.getTeam(this.team.no, this.$store.state.size).then(() => {
+          this.loading = false;
+        });
+      } else if (this.team.no && this.team.no >= this.team.totalPage) {
+        this.finished = true;
+      } else {
+        this.loading = false;
+      }
     },
     onRefresh() {
-      setTimeout(() => {
-        this.$toast.success('刷新成功');
+      this.getTeam(1, this.team.no * this.$store.state.size).then(() => {
         this.isLoading = false;
-      }, 500);
+        this.$toast.success("刷新成功");
+      });
     },
     getTeam(no, size, name = "") {
-      // eslint-disable-next-line no-unused-vars
       let _this = this;
       let params = {
         name: name,
         no: no,
         size: size
       };
-      // eslint-disable-next-line no-undef
       return _this.https
         .fetchPost("/rest/agent/teams.htm", params)
         .then(data => {
@@ -85,7 +95,9 @@ export default {
           window.console.log(err);
         });
     },
-    search() {},
+    search() {
+      this.getTeam(this.no, this.$store.state.size, this.value);
+    },
     addSalesman() {
       this.$router.push("/addSalesman");
     }

@@ -59,14 +59,18 @@ export default {
       this.$router.push("pass");
     },
     exit() {
-      this.$dialog.confirm({
-        title: '标题',
-        message: '是否退出登录'
-      }).then(() => {
-        this.$router.push("/");
-      }).catch(() => {
-        // on cancel
-      });
+      this.$dialog
+        .confirm({
+          title: "标题",
+          message: "是否退出登录"
+        })
+        .then(() => {
+          this.$cookies.remove("login");
+          this.$router.push("/");
+        })
+        .catch(() => {
+          // on cancel
+        });
     }
   }
 };
@@ -92,7 +96,8 @@ export default {
     align-items: center;
     font-size: 0.85rem;
     color: #fff;
-    margin-top: 0.8rem;
+    padding: 0.8rem;
+    box-sizing: border-box;
   }
 
   .userInfo img {

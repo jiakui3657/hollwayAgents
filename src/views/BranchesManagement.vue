@@ -2,19 +2,29 @@
   <div class="branchesManagement">
     <div class="shopInfo">
       <div class="shopTitle">充电宝槽位管理</div>
-      <div>底座ID<span>MAKL12356789098</span></div>
-      <div>网络状态<span>在线</span></div>
-      <div>软件管理<span>B.06.04.02</span></div>
-      <div>更新时间<span>2019-12-09 17:24</span></div>
+      <div>
+        底座ID<span>{{ equipmentInfo.sn }}</span>
+      </div>
+      <div>
+        网络状态<span>{{ equipmentInfo.state }}</span>
+      </div>
+      <div>
+        软件管理<span>{{ equipmentInfo.softVersion }}</span>
+      </div>
+      <div>
+        更新时间<span>{{ equipmentInfo.date }}</span>
+      </div>
     </div>
     <div class="equipment">
       <div class="equipmentTitle">
         <div class="equipmentFunc">
-          <div class="refresh">
+          <div class="refresh" @click="refresh">
             <img :src="require('../assets/refresh.jpg')" alt="" />
             <span>刷新</span>
           </div>
-          <div class="popupAll">弹出所有</div>
+          <div class="popupAll" @click="popUpAll(equipmentInfo.id)">
+            弹出所有
+          </div>
         </div>
         <div class="equipmentTable">
           <span>槽位</span>
@@ -25,13 +35,19 @@
         </div>
       </div>
       <div class="scroll">
-        <div class="equipmentList" v-for="(item, index) in 10" :key="index">
-          <span>{{index + 1}}</span>
-          <span>正常</span>
-          <span>100%</span>
-          <div>HYCB99001706</div>
-          <span>弹出</span>
-        </div>
+        <van-list :finished="false" finished-text="没有更多了">
+          <van-cell
+            class="equipmentList"
+            v-for="(item, index) in equipmentInfo.batteries"
+            :key="index"
+          >
+            <span>{{ item.slot }}</span>
+            <span>{{ item.state }}</span>
+            <span>{{ item.level }}</span>
+            <div>{{ item.sn }}</div>
+            <span @click="popUp(item.id, index)">弹出</span>
+          </van-cell>
+        </van-list>
       </div>
       <div class="equipmentBottom">注： 设备左起为1号槽位</div>
     </div>
@@ -43,9 +59,91 @@ export default {
   name: "branchesManagement",
   components: {},
   data() {
-    return {};
+    return {
+      finished: true,
+      equipmentInfo: {}
+    };
   },
-  methods: {}
+  mounted: function() {
+    this.getEquipment();
+  },
+  methods: {
+    getEquipment() {
+      let _this = this;
+      let params = {
+        id: _this.$route.query.id
+      };
+      return _this.https
+        .fetchPost("/rest/deviceAgent/info.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            window.console.log(data);
+            _this.equipmentInfo = data;
+            return Promise.resolve();
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
+    },
+    popUp(id, index) {
+      let _this = this;
+      let params = {
+        id
+      };
+      _this.https
+        .fetchPost("/rest/deviceAgent/out.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            window.console.log(data);
+            _this.equipmentInfo.batteries[index].state = "空";
+            this.$toast.success("电池弹出成功");
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
+    },
+    popUpAll(id) {
+      let _this = this,
+        index = -1;
+      let params = {
+        id
+      };
+      _this.https
+        .fetchPost("/rest/deviceAgent/outAll.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            window.console.log(data);
+            // eslint-disable-next-line no-unused-vars
+            var time = setInterval(() => {
+              if (index < _this.equipmentInfo.batteries.length - 1) {
+                index += 1;
+                _this.equipmentInfo.batteries[index].state = "空";
+                window.console.log("电池弹出成功");
+              } else {
+                clearInterval(time);
+                this.$toast.success("电池弹出成功");
+              }
+            }, 1500);
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
+    },
+    refresh() {
+      this.getEquipment().then(() => {
+        this.$toast.success("刷新成功");
+      });
+    }
+  }
 };
 </script>
 
@@ -206,6 +304,7 @@ export default {
     font-size: 0.7rem;
     box-sizing: border-box;
     border-bottom: 1px solid #e7e7e7;
+    padding: 0;
   }
 
   .scroll .equipmentList:last-child {
@@ -227,11 +326,11 @@ export default {
     display: flex;
   }
 
-  .scroll .equipmentList span:nth-child(2){
+  .scroll .equipmentList span:nth-child(2) {
     color: #8eb694;
   }
 
-  .scroll .equipmentList span:last-child{
+  .scroll .equipmentList span:last-child {
     display: flex;
     width: 2.18rem;
     height: 1.65rem;

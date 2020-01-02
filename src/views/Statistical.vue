@@ -1,27 +1,44 @@
 <template>
   <div class="statistical">
     <div class="search">
-      <input disabled type="text" placeholder="请选择时间" />
+      <van-field
+        readonly
+        clickable
+        :value="currentTime"
+        placeholder="结束时间"
+        @click="timeState = true"
+      />
+
+      <van-popup v-model="timeState" position="bottom">
+        <van-datetime-picker
+          v-model="currentTime"
+          type="time"
+          :min-hour="0"
+          :max-hour="23"
+          @confirm="getCurrentTime"
+          @cancel="timeState = false"
+        />
+      </van-popup>
       <span>搜索</span>
     </div>
     <div class="content">
       <div class="dataList">
         <div class="dataList_l dataItem">
-          <div class="">0<span>单</span></div>
+          <div class="">{{ statisticsInfo.orderNum }}<span>单</span></div>
           <div>生成订单</div>
         </div>
         <div class="dataList_r dataItem">
-          <div class="">0.0<span>元</span></div>
+          <div class="">{{ statisticsInfo.money }}<span>元</span></div>
           <div>创造收益</div>
         </div>
       </div>
       <div class="dataList">
         <div class="dataList_l dataItem">
-          <div class="">0<span>个</span></div>
+          <div class="">{{ statisticsInfo.deviceNum }}<span>个</span></div>
           <div>创建网点</div>
         </div>
         <div class="dataList_r dataItem">
-          <div class="">0<span>人</span></div>
+          <div class="">{{ statisticsInfo.teamNum }}<span>人</span></div>
           <div>新增团队</div>
         </div>
       </div>
@@ -41,8 +58,40 @@ export default {
   },
   data() {
     return {
-      currentTime: "00:00"
+      currentTime: "00:00",
+      statisticsInfo: {},
+      timeState: false
     };
+  },
+  mounted: function() {
+    this.getStatisticsInfo();
+  },
+  methods: {
+    getStatisticsInfo(beginDate = "", endDate = "") {
+      let _this = this;
+      let params = {
+        beginDate,
+        endDate
+      };
+      _this.https
+        .fetchPost("/rest/agent/statistics.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            window.console.log(data);
+            _this.statisticsInfo = data;
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
+    },
+    getCurrentTime(value) {
+      window.console.log(value);
+      this.currentTime = value;
+      this.timeState = false;
+    }
   }
 };
 </script>
@@ -55,6 +104,9 @@ export default {
   width: 100%;
   height: 100%;
   background: #f5f5f5;
+  .van-cell {
+    padding: 0;
+  }
 }
 
 .search {

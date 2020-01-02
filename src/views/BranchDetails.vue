@@ -4,38 +4,38 @@
       <div class="itemLeft">
         商家名称：
       </div>
-      <div class="itemRight">2068香辣虾</div>
+      <div class="itemRight">{{ branch.name }}</div>
     </div>
     <div class="item">
       <div class="itemLeft">
         负责人：
       </div>
-      <div class="itemRight">贾魁</div>
+      <div class="itemRight">{{ branch.charge }}</div>
     </div>
     <div class="item">
       <div class="itemLeft">
         联系电话：
       </div>
-      <div class="itemRight">13468844686</div>
+      <div class="itemRight">{{ branch.phone }}</div>
     </div>
     <div class="item">
       <div class="itemLeft">
         商家分类：
       </div>
-      <div class="itemRight">会员商家</div>
+      <div class="itemRight">{{ branch.venueType }}</div>
     </div>
     <div class="item">
       <div class="itemLeft">
         商家折扣：
       </div>
-      <div class="itemRight">8折</div>
+      <div class="itemRight">{{ branch.rebate }}折</div>
     </div>
     <div class="item">
       <div class="itemLeft">
         商家LOGO：
       </div>
       <div class="itemRight logo">
-        <img :src="require('../assets/logo.jpg')" alt="" srcset="">
+        <img :src="branch.logo" alt="" srcset="" />
       </div>
     </div>
     <div class="item">
@@ -43,32 +43,32 @@
         商家门头：
       </div>
       <div class="itemRight door">
-        <img :src="require('../assets/logo.jpg')" alt="" srcset="">
+        <img :src="branch.mentou" alt="" srcset="" />
       </div>
     </div>
     <div class="item">
       <div class="itemLeft">
         会员地址：
       </div>
-      <div class="itemRight">陕西省西安市雁塔区陈家庄小区</div>
+      <div class="itemRight">{{ branch.address }}</div>
     </div>
-     <div class="item">
+    <div class="item">
       <div class="itemLeft">
         会员特权：
       </div>
-      <div class="itemRight">荷尔盟会员享受全场8折优惠!</div>
+      <div class="itemRight">{{ branch.privilege }}!</div>
     </div>
     <div class="item">
       <div class="itemLeft">
         商家简介：
       </div>
-      <div class="itemRight">欢迎光临2068香辣虾!</div>
+      <div class="itemRight">{{ branch.note }}!</div>
     </div>
-     <div class="item">
+    <div class="item">
       <div class="itemLeft">
         上线日期：
       </div>
-      <div class="itemRight">10-25</div>
+      <div class="itemRight">{{ branch.time }}</div>
     </div>
   </div>
 </template>
@@ -78,9 +78,30 @@ export default {
   name: "branchDetails",
   components: {},
   data() {
-    return {};
+    return {
+      branch: {}
+    };
   },
-  methods: {}
+  mounted: function() {
+    window.console.log(this.$route.query);
+    let _this = this;
+    let params = {
+      id: this.$route.query.id
+    };
+    _this.https
+      .fetchPost("/rest/agentVenue/info.htm", params)
+      .then(data => {
+        if (data.code == 0) {
+          window.console.log(data);
+          this.branch = data;
+        } else {
+          this.$toast(data.msg);
+        }
+      })
+      .catch(err => {
+        window.console.log(err);
+      });
+  }
 };
 </script>
 
@@ -123,7 +144,8 @@ export default {
     align-items: center;
   }
 
-  .logo, .door {
+  .logo,
+  .door {
     border: 0;
     height: auto;
   }

@@ -1,13 +1,21 @@
 <template>
   <div class="branchesDetails">
     <div class="shopInfo">
-      <div>网点名称<span>西安望唐</span></div>
-      <div>服务时间<span>06:00 - 22:00</span></div>
-      <div>服务电话<span>13468844686</span></div>
-      <div>设备地址<span>陕西省西安市雁塔区科技路西口陈家庄小区</span></div>
+      <div>
+        网点名称<span>{{ shop.name }}</span>
+      </div>
+      <div>
+        服务时间<span>{{ shop.time }}</span>
+      </div>
+      <div>
+        服务电话<span>{{ shop.phone }}</span>
+      </div>
+      <div>
+        设备地址<span>{{ shop.address }}</span>
+      </div>
     </div>
     <div class="equipmentInfo">
-      <div class="basisInfo"><span>产品类型</span>充电宝</div>
+      <div class="basisInfo"><span>产品类型</span>{{ shop.catalog }}</div>
       <div class="equipmentType">
         <span>设备类型</span>
         <div>充电宝</div>
@@ -16,20 +24,27 @@
       <div class="billingInfo">
         <span>计费信息</span>
         <div class="billingPrice">
-          <div><van-field placeholder="1元" /><span>/半小时</span></div>
-          <div><van-field placeholder="20元" /><span>/每天(封顶)</span></div>
+          <div>
+            <van-field v-model="halfHour" placeholder="1" /><span
+              >元/半小时</span
+            >
+          </div>
+          <div>
+            <van-field v-model="day" placeholder="20" /><span
+              >元/每天(封顶)</span
+            >
+          </div>
         </div>
       </div>
       <div class="equipmentCoding">
         <span>设备SN</span>
         <div>
-          请扫描设备二维码并核对
+          {{ sn }}
           <img :src="require('../assets/scan.jpg')" alt="" />
         </div>
       </div>
-      <div class="scanBtn">确认</div>
       <div class="bottom">
-        <div class="btn">+ 添加设备</div>
+        <div class="btn" @click="btn">+ 添加设备</div>
       </div>
     </div>
   </div>
@@ -40,9 +55,66 @@ export default {
   name: "branchesDetails",
   components: {},
   data() {
-    return {};
+    return {
+      shop: {},
+      halfHour: "",
+      day: "",
+      sn: "请扫描设备二维码并核对"
+    };
   },
-  methods: {}
+  mounted: function() {
+    let _this = this;
+    let params = {
+      id: _this.$route.query.id
+    };
+    _this.https
+      .fetchPost("/rest/agentVenue/info.htm", params)
+      .then(data => {
+        if (data.code == 0) {
+          window.console.log(data);
+          this.shop = data;
+        } else {
+          this.$toast(data.msg);
+        }
+      })
+      .catch(err => {
+        window.console.log(err);
+      });
+  },
+  methods: {
+    btn() {
+      let _this = this;
+      if (
+        _this.day == "" ||
+        _this.halfHour == "" ||
+        _this.sn == "请扫描设备二维码并核对"
+      ) {
+        _this.$toast("请完善信息");
+        return;
+      }
+      let params = {
+        id: _this.$route.query.id,
+        halfHour: _this.halfHour,
+        day: _this.day,
+        catalog: _this.shop.catalog,
+        sn: _this.sn
+      };
+      _this.https
+        .fetchPost("/rest/agentVenue/addDevice.htm", params)
+        .then(data => {
+          if (data.code == 0) {
+            window.console.log(data);
+            _this.$toast.success("添加成功");
+            _this.$router.go(-1);
+          } else {
+            this.$toast(data.msg);
+          }
+        })
+        .catch(err => {
+          window.console.log(err);
+        });
+    }
+  }
 };
 </script>
 
@@ -191,7 +263,7 @@ export default {
   }
 
   .equipmentCoding div {
-    width: 10.61rem;
+    padding: 0 0.5rem;
     display: flex;
     justify-content: center;
     align-items: center;
